@@ -83,6 +83,7 @@ import {
 	GlobalFileNames,
 	saveApiConversationHistory,
 	saveClineMessages,
+	saveSystemPrompt,
 } from "@core/storage/disk"
 import {
 	getGlobalClineRules,
@@ -1620,6 +1621,9 @@ export class Task {
 			this.conversationHistoryDeletedRange = contextManagementMetadata.conversationHistoryDeletedRange
 			await this.saveClineMessagesAndUpdateHistory() // saves task history item which we use to keep track of conversation history deleted range
 		}
+
+		// Save the system prompt for this API request
+		await saveSystemPrompt(this.getContext(), this.taskId, systemPrompt, previousApiReqIndex)
 
 		let stream = this.api.createMessage(systemPrompt, contextManagementMetadata.truncatedConversationHistory)
 

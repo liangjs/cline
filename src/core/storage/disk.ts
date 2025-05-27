@@ -20,6 +20,7 @@ export const GlobalFileNames = {
 	cursorRulesFile: ".cursorrules",
 	windsurfRules: ".windsurfrules",
 	taskMetadata: "task_metadata.json",
+	systemPrompt: "system_prompt.json",
 }
 
 export async function getDocumentsPath(): Promise<string> {
@@ -176,4 +177,48 @@ export async function saveTaskMetadata(context: vscode.ExtensionContext, taskId:
 	} catch (error) {
 		console.error("Failed to save task metadata:", error)
 	}
+}
+
+export interface SystemPromptData {
+	role: "system"
+	content: string
+	timestamp: string
+	apiRequestIndex?: number
+}
+
+export async function saveSystemPrompt(
+	context: vscode.ExtensionContext,
+	taskId: string,
+	systemPrompt: string,
+	apiRequestIndex?: number,
+) {
+	try {
+		const taskDir = await ensureTaskDirectoryExists(context, taskId)
+		const filePath = path.join(taskDir, GlobalFileNames.systemPrompt)
+
+		const systemPromptData: SystemPromptData = {
+			role: "system",
+			content: systemPrompt,
+			timestamp: new Date().toISOString(),
+			apiRequestIndex,
+		}
+
+		await fs.writeFile(filePath, JSON.stringify(systemPromptData, null, 2))
+	} catch (error) {
+		// Don't let system prompt saving failures stop the task
+		console.error("Failed to save system prompt:", error)
+	}
+}
+
+export async function getSavedSystemPrompt(context: vscode.ExtensionContext, taskId: string): Promise<SystemPromptData | null> {
+	const filePath = path.join(await ensureTaskDirectoryExists(context, taskId), GlobalFileNames.systemPrompt)
+	try {
+		if (await fileExistsAtPath(filePath)) {
+			const data = await fs.readFile(filePath, "utf8")
+			return JSON.parse(data) as SystemPromptData
+		}
+	} catch (error) {
+		console.error("Failed to read system prompt:", error)
+	}
+	return null
 }
